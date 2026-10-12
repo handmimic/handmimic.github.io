@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>HandMimic: Learning Dexterous Manipulations from Videos</title>
+<meta name="description" content="HandMimic learns dexterous manipulation policies from monocular human videos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap">
+<style>
+html{scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#1a1a1a;font-family:'Figtree',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2b62c2;text-decoration:none}
+a:hover{color:#1d4a99;text-decoration:underline}
+#references li{padding:4px 10px;margin:0 -10px;border-radius:6px;transition:background 0.35s ease}
+#references li:target,#references li.ref-hl{background:#fff2bf;color:#222}
+</style>
+</helmet>
+
+<div style="background:#fff;color:#1a1a1a;padding-bottom:104px;padding-left:{{ rootPad }}">
+
+<sc-if value="{{ showNav }}" hint-placeholder-val="{{ false }}">
+  <nav style="position:fixed;top:50%;transform:translateY(-50%);left:{{ navLeft }};width:170px;z-index:10;font-size:14px;line-height:1.3">
+    <div ref="{{ navRef }}" style="position:relative;display:flex;flex-direction:column;border-left:1px solid #e3e3e3">
+      <a href="#top" data-nav="top" style="padding:6px 0 6px 26px;font-size:15px;font-weight:700;color:#111;text-decoration:none" style-hover="color:#111;text-decoration:none">HandMimic</a>
+      <a href="#abstract" data-nav="abstract" style="padding:6px 0 6px 26px;color:{{ n0c }};font-weight:{{ n0w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Abstract</a>
+      <a href="#method" data-nav="method" style="padding:6px 0 6px 26px;color:{{ n1c }};font-weight:{{ n1w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Method</a>
+      <a href="#results" data-nav="results" style="padding:6px 0 6px 26px;color:{{ n2c }};font-weight:{{ n2w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Results</a>
+      <a href="#results" onClick="{{ setS0 }}" style="padding:4px 0 4px 38px;font-size:13.5px;color:{{ n3c }};font-weight:{{ n3w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Reconstruction</a>
+      <a href="#results" onClick="{{ setS1 }}" style="padding:4px 0 4px 38px;font-size:13.5px;color:{{ n4c }};font-weight:{{ n4w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Policy learning</a>
+      <a href="#results" onClick="{{ setS2 }}" style="padding:4px 0 4px 38px;font-size:13.5px;color:{{ n5c }};font-weight:{{ n5w }};text-decoration:none" style-hover="color:#111;text-decoration:none">New shapes</a>
+      <a href="#results" onClick="{{ setS3 }}" style="padding:4px 0 4px 38px;font-size:13.5px;color:{{ n6c }};font-weight:{{ n6w }};text-decoration:none" style-hover="color:#111;text-decoration:none">In the wild</a>
+      <a href="#real-world" data-nav="real-world" style="padding:6px 0 6px 26px;color:{{ n7c }};font-weight:{{ n7w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Real world</a>
+      <a href="#limitations" data-nav="limitations" style="padding:6px 0 6px 26px;color:{{ n8c }};font-weight:{{ n8w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Limitations</a>
+      <a href="#citation" data-nav="citation" style="padding:6px 0 6px 26px;color:{{ n9c }};font-weight:{{ n9w }};text-decoration:none" style-hover="color:#111;text-decoration:none">Citation</a>
+      <a href="#references" data-nav="references" style="padding:6px 0 6px 26px;color:{{ n10c }};font-weight:{{ n10w }};text-decoration:none" style-hover="color:#111;text-decoration:none">References</a>
+      <div ref="{{ handleRef }}" onPointerDown="{{ onHandleDown }}" title="Drag to scroll" style="position:absolute;left:-15.5px;top:0;margin-top:-15px;width:30px;height:30px;border-radius:8px;background:#fff;border:2px solid #e0a32e;box-shadow:0 1px 4px rgba(0,0,0,0.14);display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;user-select:none;will-change:transform" style-hover="box-shadow:0 2px 8px rgba(0,0,0,0.22)">
+        <img src="assets/xhand.svg" alt="" draggable="false" style="display:block;width:24px;height:24px;pointer-events:none;transition:transform 0.15s ease;transform:{{ handTilt }}">
+      </div>
+    </div>
+  </nav>
+</sc-if>
+
+<header id="top" data-screen-label="Title" style="max-width:1000px;margin:0 auto;padding:clamp(32px,5vw,52px) 24px 0;text-align:center">
+  <h1 style="margin:0;font-size:clamp(44px,7vw,68px);font-weight:700;letter-spacing:-0.025em;line-height:1.05;color:#111">HandMimic</h1>
+  <p style="margin:12px 0 0;font-size:clamp(19px,2.4vw,24px);line-height:1.35;color:#333">Learning Dexterous Manipulations from Videos</p>
+  <sc-if value="{{ anon }}" hint-placeholder-val="{{ false }}">
+    <p style="margin:28px 0 0;font-size:17px;color:#333">Anonymous Authors</p>
+  </sc-if>
+  <sc-if value="{{ named }}" hint-placeholder-val="{{ true }}">
+    <div style="margin:28px auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:17px;white-space:nowrap">
+      <span><a href="https://panzhy.com/" target="_blank" rel="noopener">Zhuoyang Pan</a><sup style="margin-left:1px;color:#555">1</sup></span>
+      <span><a href="https://timsong412.github.io/" target="_blank" rel="noopener">Yunzhou Song</a><sup style="margin-left:1px;color:#555">1</sup></span>
+      <span><a href="https://chunyu-jiang.github.io/" target="_blank" rel="noopener">Chunyu Jiang</a><sup style="margin-left:1px;color:#555">1</sup></span>
+      <span><a href="https://junyaoshi.github.io/" target="_blank" rel="noopener">Junyao Shi</a><sup style="margin-left:1px;color:#555">1</sup></span>
+      <span><a href="https://jiahuilei.com/?lang=en" target="_blank" rel="noopener">Jiahui Lei</a><sup style="margin-left:1px;color:#555">2</sup></span>
+      <span><a href="https://www.cis.upenn.edu/~kostas/" target="_blank" rel="noopener">Kostas Daniilidis</a><sup style="margin-left:1px;color:#555">1</sup></span>
+    </div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;font-size:15px;color:#666"><span><sup>1</sup>GRASP Laboratory, University of Pennsylvania</span><span><sup>2</sup>UC Berkeley</span></div>
+  </sc-if>
+  <div style="margin-top:24px;display:flex;justify-content:center;flex-wrap:wrap;gap:10px">
+    <a href="#" style="display:inline-flex;align-items:center;height:40px;padding:0 22px;border-radius:999px;background:#222;color:#fff;font-size:15px;font-weight:500;text-decoration:none" style-hover="background:#000">Paper</a>
+    <span style="display:inline-flex;align-items:center;height:40px;padding:0 22px;border-radius:999px;background:#f0f0f0;color:#888;font-size:15px;font-weight:500">Code (soon)</span>
+  </div>
+  <div style="margin:24px auto 0;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:#fff7e6;border:1px solid #f1d59a;font-size:14px;color:#7a5a12">
+    <span style="width:7px;height:7px;border-radius:50%;background:#e0a32e"></span>
+    <span>This page is still under construction. Stay tuned for updates!</span>
+  </div>
+  <p style="margin:24px auto 0;max-width:760px;font-size:17px;line-height:1.6;color:#333;text-wrap:pretty"><strong style="color:#111">TL;DR:</strong> HandMimic learns dexterous manipulation from monocular human videos. It treats the reconstructed hand–object motion as an imperfect reference and practices it with RL in simulation, across digital siblings of the object.</p>
+</header>
+
+<section data-screen-label="Teaser" style="max-width:1000px;margin:0 auto;padding:48px 24px 0">
+  <sc-if value="{{ heroTiles }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-wrap:wrap;gap:22px 12px">
+      <div style="flex:1161 1 0;min-width:min(100%,340px);display:flex;gap:12px">
+        <figure style="flex:600 1 0;min-width:0;margin:0;display:flex;flex-direction:column;gap:10px">
+          <img src="assets/stage1_video.jpg" alt="Monocular videos of a hand manipulating a soda can and a marker" style="display:block;width:100%;height:auto;aspect-ratio:600/522;border-radius:8px;border:1px solid #ececec">
+          <figcaption style="font-size:14.5px;line-height:1.4;color:#555;text-align:center">Human video</figcaption>
+        </figure>
+        <figure style="flex:561 1 0;min-width:0;margin:0;display:flex;flex-direction:column;gap:10px">
+          <img src="assets/stage2_reference.jpg" alt="Reconstructed objects grasped by the retargeted robot hand" style="display:block;width:100%;height:auto;aspect-ratio:561/522;border-radius:8px;border:1px solid #ececec">
+          <figcaption style="font-size:14.5px;line-height:1.4;color:#555;text-align:center">Reconstruct &amp; retarget</figcaption>
+        </figure>
+      </div>
+      <div style="flex:1109 1 0;min-width:min(100%,340px);display:flex;gap:12px">
+        <figure style="flex:613 1 0;min-width:0;margin:0;display:flex;flex-direction:column;gap:10px">
+          <img src="assets/stage3_practice.jpg" alt="Digital siblings and simulation rollouts" style="display:block;width:100%;height:auto;aspect-ratio:613/522;border-radius:8px;border:1px solid #ececec">
+          <figcaption style="font-size:14.5px;line-height:1.4;color:#555;text-align:center">Practice in simulation</figcaption>
+        </figure>
+        <figure style="flex:496 1 0;min-width:0;margin:0;display:flex;flex-direction:column;gap:10px">
+          <img src="assets/stage4_real.jpg" alt="KUKA arm with XHand1 lifting a bottle and a soda can" style="display:block;width:100%;height:auto;aspect-ratio:496/522;border-radius:8px;border:1px solid #ececec">
+          <figcaption style="font-size:14.5px;line-height:1.4;color:#555;text-align:center">Real robot</figcaption>
+        </figure>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ heroFigure }}" hint-placeholder-val="{{ false }}">
+    <a href="assets/teaser.jpg" target="_blank" rel="noopener" style="display:block;cursor:zoom-in"><img src="assets/teaser.jpg" alt="HandMimic overview" style="display:block;width:100%;height:auto;aspect-ratio:2400/710"></a>
+  </sc-if>
+</section>
+
+<section id="abstract" data-screen-label="Abstract" style="max-width:1000px;margin:0 auto;padding:80px 24px 0">
+  <div style="max-width:800px;margin:0 auto">
+    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;color:#111">Abstract</h2>
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">While humans naturally learn dexterous manipulation by watching others and practicing, robotic teleoperation of dexterous hands remains prohibitively expensive and non-trivial. We introduce HandMimic, a framework for learning dexterous manipulation policies directly from real-world monocular videos. We first reconstruct and align the observed hand-object interaction in simulation, while treating the resulting motion as an imperfect reference rather than a physically valid robot demonstration. We then practice in simulation using reinforcement learning to recover physically feasible behaviors from the reconstructed reference. To reduce dependence on a single reconstructed object, we further train across digital siblings with varying geometry and scale. Quantitative experiments show that policies learned from reconstructed references approach those trained from ground-truth references, while digital-sibling training improves generalization to unseen geometry and scale variations. We further validate the resulting motions on a real dexterous robot. Together, these results support using reconstructed human interactions as references for physical practice across varying object geometries.</p>
+  </div>
+</section>
+
+<section id="method" data-screen-label="Method" style="max-width:1000px;margin:0 auto;padding:88px 24px 0">
+  <div style="max-width:800px;margin:0 auto">
+    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;color:#111">Method</h2>
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">Even strong monocular reconstruction leaves errors in object pose, metric scale, occluded fingers and unseen geometry. These errors look small in the image but change the contacts that manipulation depends on, and a human hand motion does not directly define a robot hand motion. HandMimic therefore uses the reconstructed and retargeted motion only as a reference, and resolves physical feasibility through policy learning in simulation.</p>
+  </div>
+  <figure style="margin:32px 0 0">
+    <a href="assets/pipeline.jpg" target="_blank" rel="noopener" style="display:block;cursor:zoom-in"><img src="assets/pipeline.jpg" alt="HandMimic pipeline: input video, video-derived reference, alignment, hand retargeting, digital siblings, policy learning" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:2067/978"></a>
+    <figcaption style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty"><strong style="color:#222">System overview.</strong> From a monocular video, HandMimic reconstructs the object geometry, object motion and human hand, aligns them in a common metric frame, and retargets the hand motion to a dexterous robot hand. It then builds digital siblings with shape and scale variations and trains an object-centric policy in simulation.</figcaption>
+  </figure>
+
+  <div style="max-width:800px;margin:48px auto 0">
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px">
+      <button type="button" onClick="{{ setM0 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ m0bg }};color:{{ m0fg }}" style-hover="opacity:0.85">1. Reconstruct</button>
+      <button type="button" onClick="{{ setM1 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ m1bg }};color:{{ m1fg }}" style-hover="opacity:0.85">2. Retarget</button>
+      <button type="button" onClick="{{ setM2 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ m2bg }};color:{{ m2fg }}" style-hover="opacity:0.85">3. Digital siblings</button>
+      <button type="button" onClick="{{ setM3 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ m3bg }};color:{{ m3fg }}" style-hover="opacity:0.85">4. Policy learning</button>
+    </div>
+    <div style="margin-top:24px">
+      <sc-if value="{{ m0 }}" hint-placeholder-val="{{ true }}">
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">We segment the object with <a href="#ref-sam2" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">SAM2</a> and reconstruct its mesh with <a href="#ref-sam3d" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">SAM3D</a>, using camera parameters from <a href="#ref-spatracker" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">SpatialTrackerV2</a>. <a href="#ref-foundationpose" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">FoundationPose</a> tracks the object’s 6-DoF pose and <a href="#ref-wilor" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">WiLoR</a> recovers the <a href="#ref-mano" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">MANO</a> hand. Because the hand and object are reconstructed separately, we calibrate scale from hand–object contact and align translation in the grasp frame, which places both in one metric, table-aligned frame.</p>
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px"><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Human video</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Reconstruction</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Object pose overlay</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Hand pose overlay</span><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_lift.mp4" poster="assets/videos/wild_can_lift.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/recon_can.mp4" poster="assets/videos/recon_can.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/overlay_can.mp4" poster="assets/videos/overlay_can.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/handpose_can.mp4" poster="assets/videos/handpose_can.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_marker.mp4" poster="assets/videos/wild_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/recon_marker.mp4" poster="assets/videos/recon_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/overlay_marker.mp4" poster="assets/videos/overlay_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/handpose_marker.mp4" poster="assets/videos/handpose_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure></div>
+  <p style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty">Reconstruction and alignment for two in-the-wild videos. The object and hand overlays follow the video closely.</p>
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty;margin-top:28px"><strong style="color:#111">Decent, but not perfect.</strong> Zoom in on the grasp, though, and the reconstructed fingertips do not touch the object where the real hand does. Even small gaps like these change the contacts that manipulation depends on, so the reconstruction cannot simply be replayed on a robot.</p>
+        <div style="margin-top:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px"><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Video frame</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Reconstructed grasp</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Video frame</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Reconstructed grasp</span><div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid #ececec;background:#fff"><img src="assets/recon_err_can_video.png" alt="Hand grasping the can in the video" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:4/3"><svg viewBox="0 0 400 300" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><circle cx="137" cy="205" r="12" fill="#e5484d" stroke="#fff" strokeWidth="3.5"/></svg></div><div style="display:flex;flex-direction:column;gap:6px"><div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid #ececec;background:#fff"><img src="assets/recon_err_can_recon.png" alt="Reconstructed hand grasping the reconstructed can" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:4/3"><svg viewBox="0 0 400 300" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><line x1="137" y1="194" x2="185" y2="216" stroke="#e5484d" strokeWidth="7"/><line x1="200" y1="302" x2="171" y2="229" stroke="#e5484d" strokeWidth="6"/><polygon points="167,220 180,232 166,238" fill="#e5484d" stroke="#e5484d" strokeWidth="5" strokeLinejoin="round"/><circle cx="137" cy="194" r="12" fill="#e5484d" stroke="#fff" strokeWidth="3.5"/><circle cx="185" cy="216" r="12" fill="#e5484d" stroke="#fff" strokeWidth="3.5"/></svg></div><span style="font-size:14px;font-weight:700;color:#e5484d;text-align:center">Recon error</span></div><div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid #ececec;background:#fff"><img src="assets/recon_err_marker_video.png" alt="Hand holding the marker in the video" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:4/3"><svg viewBox="0 0 400 300" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><circle cx="104" cy="134" r="12" fill="#e5484d" stroke="#fff" strokeWidth="3.5"/></svg></div><div style="display:flex;flex-direction:column;gap:6px"><div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid #ececec;background:#fff"><img src="assets/recon_err_marker_recon.png" alt="Reconstructed hand holding the reconstructed marker" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:4/3"><svg viewBox="0 0 400 300" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><line x1="112" y1="116" x2="154" y2="118" stroke="#e5484d" strokeWidth="7"/><line x1="200" y1="302" x2="142" y2="141" stroke="#e5484d" strokeWidth="6"/><polygon points="138,132 151,144 136,150" fill="#e5484d" stroke="#e5484d" strokeWidth="5" strokeLinejoin="round"/><circle cx="112" cy="116" r="12" fill="#e5484d" stroke="#fff" strokeWidth="3.5"/><circle cx="154" cy="118" r="12" fill="#e5484d" stroke="#fff" strokeWidth="3.5"/></svg></div><span style="font-size:14px;font-weight:700;color:#e5484d;text-align:center">Recon error</span></div></div>
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty;margin-top:28px"><strong style="color:#111">The errors fall into four recurring types.</strong> Object pose drift, occluded fingers, a hand–object depth gap, and inaccurate shape and scale. The reconstruction pipeline does not remove them. Instead, HandMimic treats the result as an imperfect reference and lets practice in simulation recover behaviors that reproduce the demonstrated object motion despite them.</p>
+        <div style="margin-top:20px"><figure style="margin:0">
+    <a href="assets/failure_mode_new.jpg" target="_blank" rel="noopener" style="display:block;cursor:zoom-in"><img src="assets/failure_mode_new.jpg" alt="Reconstruction errors with ground-truth comparison and simulation rollouts" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:2211/1488"></a>
+    <figcaption style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty"><strong style="color:#222">Remaining reconstruction errors.</strong> Four DexYCB cases with the input and reconstruction (top), the comparison against ground truth with the measured error (middle), and the learned policy in simulation with its success rate (bottom).</figcaption>
+  </figure></div>
+      </sc-if>
+      <sc-if value="{{ m1 }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty"><a href="#ref-pyroki" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">PyRoki</a> retargets the aligned <a href="#ref-mano" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">MANO</a> trajectory to the dexterous hand. It matches hand geometry while preserving grasp-frame contacts and temporal smoothness. The retargeted motion does not need to be physically executable; it only provides kinematic and object-motion targets for policy learning.</p>
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Human video</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Reconstructed reference</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">Retargeted to XHand1</span><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_lift.mp4" poster="assets/videos/wild_can_lift.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/recon_can.mp4" poster="assets/videos/recon_can.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/retarget_can.mp4" poster="assets/videos/retarget_can.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_marker.mp4" poster="assets/videos/wild_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/recon_marker.mp4" poster="assets/videos/recon_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/retarget_marker.mp4" poster="assets/videos/retarget_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure></div>
+        <p style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty">The aligned MANO motion is retargeted to the XHand1 while keeping the object trajectory from the video.</p>
+      </sc-if>
+      <sc-if value="{{ m2 }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">A policy trained on one reconstructed mesh can overfit to its errors. We build a set of digital siblings, the reconstruction plus <i>K</i> generated shape variants, sample one per episode and randomize its scale, so the same reference is practiced across geometries.</p>
+        <p style="margin:20px 0 0;text-align:center;font-family:'Cambria Math','STIX Two Math','Times New Roman',serif;font-size:19px;color:#222"><i>s<sub>o</sub></i> ∼ 𝒰(0.8, 1.2)</p>
+        <figure style="max-width:560px;margin:24px auto 0">
+          <a href="assets/shape_var_new.jpg" target="_blank" rel="noopener" style="display:block;cursor:zoom-in"><img src="assets/shape_var_new.jpg" alt="Reference objects and generated shape variants" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:2400/1125"></a>
+          <figcaption style="margin:12px 0 0;text-align:center;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty">Generated digital siblings, from close variants of the reference object to larger category-level changes.</figcaption>
+        </figure>
+        <div style="margin-top:32px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="flex:1 1 0;min-width:min(100%,220px)"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_lift.mp4" poster="assets/videos/wild_can_lift.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure></div><div style="flex:2 1 0;min-width:min(100%,340px);display:grid;grid-template-columns:1fr 1fr;gap:10px"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/retarget_can.mp4" poster="assets/videos/retarget_can.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Reconstructed object</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/sibling_can_1.mp4" poster="assets/videos/sibling_can_1.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Sibling 1</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/sibling_can_2.mp4" poster="assets/videos/sibling_can_2.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Sibling 2</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/sibling_can_3.mp4" poster="assets/videos/sibling_can_3.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Sibling 3</figcaption></figure></div></div>
+        <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="flex:1 1 0;min-width:min(100%,220px)"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_marker.mp4" poster="assets/videos/wild_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure></div><div style="flex:2 1 0;min-width:min(100%,340px);display:grid;grid-template-columns:1fr 1fr;gap:10px"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/retarget_marker.mp4" poster="assets/videos/retarget_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Reconstructed object</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/sibling_marker_1.mp4" poster="assets/videos/sibling_marker_1.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Sibling 1</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/sibling_marker_2.mp4" poster="assets/videos/sibling_marker_2.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Sibling 2</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/sibling_marker_3.mp4" poster="assets/videos/sibling_marker_3.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Sibling 3</figcaption></figure></div></div>
+        <p style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty">The same retargeted hand and object trajectory, replayed on the reconstructed object and on three generated siblings.</p>
+        </sc-if>
+      <sc-if value="{{ m3 }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">Following <a href="#ref-maniptrans" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">ManipTrans</a>, a closed-loop RL policy tracks the reference in simulation. The demonstrated object trajectory is the main objective and the retargeted hand is only a kinematic target, so the object term is weighted higher. Hand-tracking early termination is removed after grasp, which lets the policy find feasible contacts instead of copying the retargeted hand.</p>
+        <p style="margin:20px 0 0;text-align:center;font-family:'Cambria Math','STIX Two Math','Times New Roman',serif;font-size:19px;line-height:1.6;color:#222"><i>r<sub>t</sub></i> = <i>w</i><sub>hand</sub><i>r</i><sub>hand</sub> + <i>w</i><sub>obj</sub><i>r</i><sub>obj</sub> + <i>w</i><sub>contact</sub><i>r</i><sub>contact</sub> + <i>r</i><sub>reg</sub>,&#8195;<i>w</i><sub>obj</sub> &gt; <i>w</i><sub>hand</sub></p>
+        <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="flex:1 1 0;min-width:min(100%,220px)"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_lift.mp4" poster="assets/videos/wild_can_lift.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure></div><div style="flex:2 1 0;min-width:min(100%,340px);display:grid;grid-template-columns:1fr 1fr;gap:10px"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_can_1.mp4" poster="assets/videos/rollout_can_1.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_can_2.mp4" poster="assets/videos/rollout_can_2.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_can_3.mp4" poster="assets/videos/rollout_can_3.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_can_4.mp4" poster="assets/videos/rollout_can_4.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure></div></div>
+        <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="flex:1 1 0;min-width:min(100%,220px)"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_marker.mp4" poster="assets/videos/wild_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure></div><div style="flex:2 1 0;min-width:min(100%,340px);display:grid;grid-template-columns:1fr 1fr;gap:10px"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_marker_1.mp4" poster="assets/videos/rollout_marker_1.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_marker_2.mp4" poster="assets/videos/rollout_marker_2.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_marker_3.mp4" poster="assets/videos/rollout_marker_3.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/rollout_marker_4.mp4" poster="assets/videos/rollout_marker_4.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure></div></div>
+        <p style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty">Policy rollouts in simulation on four digital siblings per video, slowed down 3×.</p>
+      </sc-if>
+    </div>
+  </div>
+</section>
+
+<section id="results" data-screen-label="Results" style="max-width:1000px;margin:0 auto;padding:88px 24px 0">
+  <div style="max-width:800px;margin:0 auto">
+    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;color:#111">Results</h2>
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">We evaluate on 28 <a href="#ref-dexycb" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">DexYCB</a> sequences with 8 <a href="#ref-ycb" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">YCB</a> objects and on 6 in-the-wild iPhone videos. A rollout is successful when the object rotation error E<sub>R</sub> is below 30° and the translation error E<sub>T</sub> is below 60 mm. Each DexYCB result is computed over 600 rollouts.</p>
+  </div>
+  <div style="margin-top:32px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px">
+    <button type="button" onClick="{{ setS0 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ s0bg }};color:{{ s0fg }}" style-hover="opacity:0.85">Reconstruction quality</button>
+    <button type="button" onClick="{{ setS1 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ s1bg }};color:{{ s1fg }}" style-hover="opacity:0.85">Reconstructed references</button>
+    <button type="button" onClick="{{ setS2 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ s2bg }};color:{{ s2fg }}" style-hover="opacity:0.85">New shapes</button>
+    <button type="button" onClick="{{ setS3 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ s3bg }};color:{{ s3fg }}" style-hover="opacity:0.85">In-the-wild videos</button>
+  </div>
+  <sc-if value="{{ s0 }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:800px;margin:24px auto 0">
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">HandMimic gives the best hand–object alignment, posed object geometry and temporal smoothness. <a href="#ref-doasido" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">Do as I Do</a> has slightly lower PA-MPJPE, which measures local hand articulation only and does not reflect the hand–object interaction.</p>
+  </div>
+  <div style="margin-top:24px;overflow-x:auto">
+    <table style="width:100%;min-width:760px;border-collapse:collapse;font-size:14.5px;font-variant-numeric:tabular-nums;border-top:1.5px solid #222;border-bottom:1.5px solid #222">
+      <thead>
+        <tr>
+          <th style="padding:10px;text-align:left;font-weight:600;border-bottom:1px solid #222;vertical-align:bottom">Method</th>
+          <th style="padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #222">PA-MPJPE ↓<span style="display:block;font-weight:400;font-size:13px;color:#777">mm</span></th>
+          <th style="padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #222">MRPE<sub>obj</sub> ↓<span style="display:block;font-weight:400;font-size:13px;color:#777">mm</span></th>
+          <th style="padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #222">F5<sub>posed</sub> ↑<span style="display:block;font-weight:400;font-size:13px;color:#777">%</span></th>
+          <th style="padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #222">F10<sub>posed</sub> ↑<span style="display:block;font-weight:400;font-size:13px;color:#777">%</span></th>
+          <th style="padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #222">CD<sub>posed</sub> ↓<span style="display:block;font-weight:400;font-size:13px;color:#777">mm</span></th>
+          <th style="padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #222">Jerk ↓<span style="display:block;font-weight:400;font-size:13px;color:#777">mm/frame³</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:9px 10px"><a href="#ref-deximit" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">DexImit</a></td>
+          <td style="padding:9px 10px;text-align:center">5.90 <span style="color:#888">/ 5.73</span></td>
+          <td style="padding:9px 10px;text-align:center">126.37 <span style="color:#888">/ 75.99</span></td>
+          <td style="padding:9px 10px;text-align:center">15.63 <span style="color:#888">/ 12.07</span></td>
+          <td style="padding:9px 10px;text-align:center">28.64 <span style="color:#888">/ 24.21</span></td>
+          <td style="padding:9px 10px;text-align:center">180.99 <span style="color:#888">/ 21.82</span></td>
+          <td style="padding:9px 10px;text-align:center">6.53 <span style="color:#888">/ 5.53</span></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 10px">Do as I Do</td>
+          <td style="padding:9px 10px;text-align:center"><strong>3.60</strong> <span style="color:#888">/ 3.44</span></td>
+          <td style="padding:9px 10px;text-align:center">81.61 <span style="color:#888">/ 69.68</span></td>
+          <td style="padding:9px 10px;text-align:center">14.28 <span style="color:#888">/ 15.92</span></td>
+          <td style="padding:9px 10px;text-align:center">28.67 <span style="color:#888">/ 33.26</span></td>
+          <td style="padding:9px 10px;text-align:center">25.41 <span style="color:#888">/ 20.57</span></td>
+          <td style="padding:9px 10px;text-align:center">3.84 <span style="color:#888">/ 3.70</span></td>
+        </tr>
+        <tr style="background:#f3f6fc">
+          <td style="padding:9px 10px;font-weight:600">HandMimic (ours)</td>
+          <td style="padding:9px 10px;text-align:center">3.87 <span style="color:#888">/ 3.80</span></td>
+          <td style="padding:9px 10px;text-align:center"><strong>60.57</strong> <span style="color:#888">/ 39.85</span></td>
+          <td style="padding:9px 10px;text-align:center"><strong>22.02</strong> <span style="color:#888">/ 22.09</span></td>
+          <td style="padding:9px 10px;text-align:center"><strong>42.81</strong> <span style="color:#888">/ 45.23</span></td>
+          <td style="padding:9px 10px;text-align:center"><strong>16.28</strong> <span style="color:#888">/ 13.57</span></td>
+          <td style="padding:9px 10px;text-align:center"><strong>0.63</strong> <span style="color:#888">/ 0.61</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="max-width:800px;margin:12px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty"><strong style="color:#222">Table 1.</strong> Hand–object reconstruction on DexYCB, mean / median over 28 sequences. Bold marks the best mean.</p>
+  </sc-if>
+  <sc-if value="{{ s1 }}" hint-placeholder-val="{{ false }}">
+  <div style="max-width:800px;margin:24px auto 0">
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">With ground-truth demonstrations, HandMimic is comparable to <a href="#ref-maniptrans" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">ManipTrans</a> (71.4% vs. 75.7% success). With reconstructed demonstrations, HandMimic keeps 67.8% while ManipTrans drops to 6.0%. When the reconstructed mesh is used as well, HandMimic reaches 85.7% on DexYCB and 83.3% on in-the-wild videos, against 35.4% and 38.5% for ManipTrans. Compared with <a href="#ref-doasido" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">Do as I Do</a>, it succeeds on 24/28 sequences against 0/28 under our criterion, and 27/28 against 17/28 under theirs.</p>
+  </div>
+  <div style="margin-top:24px;overflow-x:auto">
+    <table style="width:100%;min-width:680px;border-collapse:collapse;font-size:14.5px;font-variant-numeric:tabular-nums;border-top:1.5px solid #222;border-bottom:1.5px solid #222">
+      <thead>
+        <tr>
+          <th rowSpan="2" style="padding:10px;text-align:left;font-weight:600;border-bottom:1px solid #222;vertical-align:bottom">Method</th>
+          <th rowSpan="2" style="padding:10px;text-align:left;font-weight:600;border-bottom:1px solid #222;vertical-align:bottom">Object mesh</th>
+          <th colSpan="3" style="padding:10px 10px 6px;text-align:center;font-weight:600;border-bottom:1px solid #ccc">DexYCB</th>
+          <th style="padding:10px 10px 6px 24px;text-align:center;font-weight:600;border-bottom:1px solid #ccc">In-the-wild</th>
+        </tr>
+        <tr>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222">E<sub>R</sub> (deg) ↓</th>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222">E<sub>T</sub> (mm) ↓</th>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222">SR (%) ↑</th>
+          <th style="padding:6px 10px 10px 24px;text-align:center;font-weight:600;border-bottom:1px solid #222">SR (%) ↑</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colSpan="6" style="padding:12px 10px 4px;font-style:italic;color:#666">Ground-truth demonstration</td></tr>
+        <tr>
+          <td style="padding:9px 10px">ManipTrans</td><td style="padding:9px 10px">GT</td>
+          <td style="padding:9px 10px;text-align:center">14.0</td><td style="padding:9px 10px;text-align:center"><strong>10.3</strong></td><td style="padding:9px 10px;text-align:center"><strong>75.7</strong></td><td style="padding:9px 10px 9px 24px;text-align:center;color:#999">–</td>
+        </tr>
+        <tr style="background:#f3f6fc">
+          <td style="padding:9px 10px;font-weight:600">HandMimic (ours)</td><td style="padding:9px 10px">GT</td>
+          <td style="padding:9px 10px;text-align:center"><strong>7.6</strong></td><td style="padding:9px 10px;text-align:center">16.0</td><td style="padding:9px 10px;text-align:center">71.4</td><td style="padding:9px 10px 9px 24px;text-align:center;color:#999">–</td>
+        </tr>
+        <tr><td colSpan="6" style="padding:14px 10px 4px;font-style:italic;color:#666;border-top:1px solid #ccc">Reconstructed demonstration</td></tr>
+        <tr>
+          <td style="padding:9px 10px">ManipTrans</td><td style="padding:9px 10px">GT</td>
+          <td style="padding:9px 10px;text-align:center">30.9</td><td style="padding:9px 10px;text-align:center">44.7</td><td style="padding:9px 10px;text-align:center">6.0</td><td style="padding:9px 10px 9px 24px;text-align:center;color:#999">–</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 10px">ManipTrans</td><td style="padding:9px 10px">Reconstructed</td>
+          <td style="padding:9px 10px;text-align:center">25.3</td><td style="padding:9px 10px;text-align:center">34.8</td><td style="padding:9px 10px;text-align:center">35.4</td><td style="padding:9px 10px 9px 24px;text-align:center">38.5</td>
+        </tr>
+        <tr style="background:#f3f6fc">
+          <td style="padding:9px 10px;font-weight:600">HandMimic (ours)</td><td style="padding:9px 10px">GT</td>
+          <td style="padding:9px 10px;text-align:center">10.5</td><td style="padding:9px 10px;text-align:center">13.6</td><td style="padding:9px 10px;text-align:center">67.8</td><td style="padding:9px 10px 9px 24px;text-align:center;color:#999">–</td>
+        </tr>
+        <tr style="background:#f3f6fc">
+          <td style="padding:9px 10px;font-weight:600">HandMimic (ours)</td><td style="padding:9px 10px">Reconstructed</td>
+          <td style="padding:9px 10px;text-align:center"><strong>4.6</strong></td><td style="padding:9px 10px;text-align:center"><strong>10.1</strong></td><td style="padding:9px 10px;text-align:center"><strong>85.7</strong></td><td style="padding:9px 10px 9px 24px;text-align:center"><strong>83.3</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="max-width:800px;margin:12px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty"><strong style="color:#222">Table 2.</strong> Rotation error, translation error and success rate for different demonstration sources and object meshes. Only success rate is available for in-the-wild videos.</p>
+
+  <div style="max-width:800px;margin:40px auto 0">
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">Rollouts of ManipTrans and HandMimic from the same reconstructed DexYCB reference, once with the ground-truth CAD model and once with the generated geometry.</p>
+  </div>
+  <div style="margin-top:24px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px">
+    <button type="button" onClick="{{ setC0 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ c0bg }};color:{{ c0fg }}" style-hover="opacity:0.85">Mustard bottle</button>
+    <button type="button" onClick="{{ setC1 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ c1bg }};color:{{ c1fg }}" style-hover="opacity:0.85">Box</button>
+  </div>
+  <sc-if value="{{ c0 }}" hint-placeholder-val="{{ true }}"><div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="flex:1 1 0;min-width:min(100%,220px)"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_mustard_input.mp4" poster="assets/videos/cmp_mustard_input.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Input video</figcaption></figure></div><div style="flex:2 1 0;min-width:min(100%,340px);display:grid;grid-template-columns:auto 1fr 1fr;gap:10px;align-items:center"><span></span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">ManipTrans</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">HandMimic (ours)</span><span style="font-size:14px;font-weight:600;color:#555;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;justify-self:center">GT CAD model</span><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_mustard_maniptrans_gt.mp4" poster="assets/videos/cmp_mustard_maniptrans_gt.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_mustard_ours_gt.mp4" poster="assets/videos/cmp_mustard_ours_gt.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><span style="font-size:14px;font-weight:600;color:#555;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;justify-self:center">Generated geometry</span><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_mustard_maniptrans_gen.mp4" poster="assets/videos/cmp_mustard_maniptrans_gen.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_mustard_ours_gen.mp4" poster="assets/videos/cmp_mustard_ours_gen.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure></div></div></sc-if>
+  <sc-if value="{{ c1 }}" hint-placeholder-val="{{ false }}"><div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="flex:1 1 0;min-width:min(100%,220px)"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_box_input.mp4" poster="assets/videos/cmp_box_input.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Input video</figcaption></figure></div><div style="flex:2 1 0;min-width:min(100%,340px);display:grid;grid-template-columns:auto 1fr 1fr;gap:10px;align-items:center"><span></span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">ManipTrans</span><span style="font-size:14px;font-weight:600;color:#555;text-align:center">HandMimic (ours)</span><span style="font-size:14px;font-weight:600;color:#555;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;justify-self:center">GT CAD model</span><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_box_maniptrans_gt.mp4" poster="assets/videos/cmp_box_maniptrans_gt.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_box_ours_gt.mp4" poster="assets/videos/cmp_box_ours_gt.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><span style="font-size:14px;font-weight:600;color:#555;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;justify-self:center">Generated geometry</span><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_box_maniptrans_gen.mp4" poster="assets/videos/cmp_box_maniptrans_gen.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/cmp_box_ours_gen.mp4" poster="assets/videos/cmp_box_ours_gen.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video></figure></div></div></sc-if>
+  </sc-if>
+  <sc-if value="{{ s2 }}" hint-placeholder-val="{{ false }}">
+  <div style="max-width:800px;margin:24px auto 0">
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">We test on held-out real scans from <a href="#ref-ycb" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">YCB</a>, <a href="#ref-gso" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">Google Scanned Objects</a> and <a href="#ref-omniobject3d" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">OmniObject3D</a>, grouped by normalized Chamfer distance <i>d</i> to the reconstructed mesh. Training on a single reconstructed mesh overfits to it. Scale randomization helps, and training across digital siblings transfers best to new shapes. Retrieved and generated siblings perform similarly, so most of the gain comes from practicing on several geometries rather than from how the siblings are obtained.</p>
+  </div>
+  <div style="margin-top:24px;overflow-x:auto">
+    <table style="width:100%;min-width:760px;border-collapse:collapse;font-size:14.5px;font-variant-numeric:tabular-nums;border-top:1.5px solid #222;border-bottom:1.5px solid #222">
+      <thead>
+        <tr>
+          <th rowSpan="2" style="padding:10px;text-align:left;font-weight:600;border-bottom:1px solid #222;vertical-align:bottom">Training geometry</th>
+          <th colSpan="5" style="padding:10px 10px 6px;text-align:center;font-weight:600;border-bottom:1px solid #ccc">DexYCB</th>
+          <th colSpan="2" style="padding:10px 10px 6px 24px;text-align:center;font-weight:600;border-bottom:1px solid #ccc">In-the-wild</th>
+        </tr>
+        <tr>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222;vertical-align:top">GT scan</th>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222;vertical-align:top">Recon.</th>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222">Close<span style="display:block;font-weight:400;font-size:13px;color:#777"><i>d</i> ≤ 2%</span></th>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222">Medium<span style="display:block;font-weight:400;font-size:13px;color:#777"><i>d</i> ≤ 3.5%</span></th>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222">Far<span style="display:block;font-weight:400;font-size:13px;color:#777"><i>d</i> ≤ 10%</span></th>
+          <th style="padding:6px 10px 10px 24px;text-align:center;font-weight:600;border-bottom:1px solid #222;vertical-align:top">Recon.</th>
+          <th style="padding:6px 10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #222;vertical-align:top">Held-out</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:9px 10px">Single reconstructed mesh</td>
+          <td style="padding:9px 10px;text-align:center">18.0</td><td style="padding:9px 10px;text-align:center">69.3</td><td style="padding:9px 10px;text-align:center">9.8</td><td style="padding:9px 10px;text-align:center">6.4</td><td style="padding:9px 10px;text-align:center">3.5</td><td style="padding:9px 10px 9px 24px;text-align:center">83.1</td><td style="padding:9px 10px;text-align:center">0.0</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 10px">Scale randomization</td>
+          <td style="padding:9px 10px;text-align:center">62.1</td><td style="padding:9px 10px;text-align:center">85.6</td><td style="padding:9px 10px;text-align:center">72.5</td><td style="padding:9px 10px;text-align:center">57.3</td><td style="padding:9px 10px;text-align:center">21.6</td><td style="padding:9px 10px 9px 24px;text-align:center"><strong>83.3</strong></td><td style="padding:9px 10px;text-align:center">30.7</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 10px">Retrieved siblings + scale</td>
+          <td style="padding:9px 10px;text-align:center"><strong>67.9</strong></td><td style="padding:9px 10px;text-align:center"><strong>85.7</strong></td><td style="padding:9px 10px;text-align:center"><strong>81.5</strong></td><td style="padding:9px 10px;text-align:center"><strong>72.3</strong></td><td style="padding:9px 10px;text-align:center"><strong>40.6</strong></td><td style="padding:9px 10px 9px 24px;text-align:center"><strong>83.3</strong></td><td style="padding:9px 10px;text-align:center">36.9</td>
+        </tr>
+        <tr style="background:#f3f6fc">
+          <td style="padding:9px 10px;font-weight:600">Generated siblings + scale (ours)</td>
+          <td style="padding:9px 10px;text-align:center">67.8</td><td style="padding:9px 10px;text-align:center"><strong>85.7</strong></td><td style="padding:9px 10px;text-align:center">80.3</td><td style="padding:9px 10px;text-align:center">70.2</td><td style="padding:9px 10px;text-align:center">36.6</td><td style="padding:9px 10px 9px 24px;text-align:center"><strong>83.3</strong></td><td style="padding:9px 10px;text-align:center"><strong>43.3</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="max-width:800px;margin:12px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty"><strong style="color:#222">Table 3.</strong> Success rate (%) for different training geometries. Both sibling variants use 12 siblings per demonstration with the same scale randomization and training budget.</p>
+
+  <figure style="margin:40px 0 0">
+    <a href="assets/ablation_v2.jpg" target="_blank" rel="noopener" style="display:block;cursor:zoom-in"><img src="assets/ablation_v2.jpg" alt="ManipTrans and HandMimic rollouts on ground-truth and changed geometry" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:2400/1160"></a>
+    <figcaption style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty"><strong style="color:#222">Robustness to shape changes.</strong> ManipTrans trained on ground-truth data fails when the object geometry changes, while HandMimic remains stable.</figcaption>
+  </figure>
+  </sc-if>
+  <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}">
+  <div style="margin-top:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_marker.mp4" poster="assets/videos/wild_marker.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Marker</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_bottle.mp4" poster="assets/videos/wild_bottle.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Bottle</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_lift.mp4" poster="assets/videos/wild_can_lift.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Can, lifting</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_circle.mp4" poster="assets/videos/wild_can_circle.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Can, tracing a circle</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_torch.mp4" poster="assets/videos/wild_torch.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Torch</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_spray.mp4" poster="assets/videos/wild_spray.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Spray bottle</figcaption></figure></div>
+  <p style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty">The six in-the-wild iPhone videos, each a single monocular RGB clip.</p>
+  <figure style="margin:20px 0 0">
+    <a href="assets/qualitative.jpg" target="_blank" rel="noopener" style="display:block;cursor:zoom-in"><img src="assets/qualitative.jpg" alt="In-the-wild videos with retargeting results and simulation rollouts" loading="lazy" style="display:block;width:100%;height:auto;aspect-ratio:2400/738"></a>
+    <figcaption style="max-width:800px;margin:14px auto 0;font-size:15px;line-height:1.55;color:#555;text-wrap:pretty">Rows show the input video, the retargeted robot-hand reference and the learned policy rollout in simulation; columns are timesteps.</figcaption>
+  </figure>
+  </sc-if>
+</section>
+
+<section id="real-world" data-screen-label="Real-World Deployment" style="max-width:1000px;margin:0 auto;padding:88px 24px 0">
+  <div style="max-width:800px;margin:0 auto">
+    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;color:#111">Real-World Deployment</h2>
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">We replay the learned motions open-loop on a KUKA iiwa 7 arm with an XHand1 hand. <a href="#ref-sam2" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">SAM2</a> segments the target object and <a href="#ref-foundationpose" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#9a9a9a;text-underline-offset:3px">FoundationPose</a> estimates its 6-DoF pose from an RGB-D view and the reconstructed mesh, which anchors the simulation frame to the real scene. The simulated rollout is transformed into that frame: the wrist trajectory becomes KUKA joint targets through inverse kinematics, and the hand trajectory maps to XHand1 joint targets.</p>
+  </div>
+  <div style="margin-top:32px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px">
+    <button type="button" onClick="{{ setR0 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ r0bg }};color:{{ r0fg }}" style-hover="opacity:0.85">Tracing a circle with a can</button>
+    <button type="button" onClick="{{ setR1 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ r1bg }};color:{{ r1fg }}" style-hover="opacity:0.85">Lifting the bottle up</button>
+    <button type="button" onClick="{{ setR2 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ r2bg }};color:{{ r2fg }}" style-hover="opacity:0.85">Tilting the spray bottle</button>
+    <button type="button" onClick="{{ setR3 }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;background:{{ r3bg }};color:{{ r3fg }}" style-hover="opacity:0.85">Lifting the can</button>
+  </div>
+  <div style="margin-top:24px">
+    <sc-if value="{{ r0 }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_circle.mp4" poster="assets/videos/wild_can_circle.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/real_can_circle.mp4" poster="assets/videos/real_can_circle.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Robot, object from the video</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/real_can_circle_unseen.mp4" poster="assets/videos/real_can_circle_unseen.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Robot, unseen object</figcaption></figure></div></sc-if>
+    <sc-if value="{{ r1 }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_bottle.mp4" poster="assets/videos/wild_bottle.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/real_bottle.mp4" poster="assets/videos/real_bottle.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Robot, object from the video</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/real_bottle_unseen.mp4" poster="assets/videos/real_bottle_unseen.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Robot, unseen object</figcaption></figure></div></sc-if>
+    <sc-if value="{{ r2 }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:680px;margin:0 auto"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_spray.mp4" poster="assets/videos/wild_spray.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/real_spray.mp4" poster="assets/videos/real_spray.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Robot</figcaption></figure></div></sc-if>
+    <sc-if value="{{ r3 }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:680px;margin:0 auto"><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/wild_can_lift.mp4" poster="assets/videos/wild_can_lift.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Human video</figcaption></figure><figure style="min-width:0;margin:0;display:flex;flex-direction:column;gap:8px"><video src="assets/videos/real_can_lift.mp4" poster="assets/videos/real_can_lift.jpg" autoPlay="true" muted="true" loop="true" playsInline="true" preload="metadata" style="display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #ececec"></video><figcaption style="font-size:14px;line-height:1.4;color:#555;text-align:center">Robot</figcaption></figure></div></sc-if>
+  </div>
+</section>
+
+<section id="limitations" data-screen-label="Limitations" style="max-width:1000px;margin:0 auto;padding:88px 24px 0">
+  <div style="max-width:800px;margin:0 auto">
+    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;color:#111">Limitations</h2>
+    <p style="margin:0;font-size:17px;line-height:1.65;color:#333;text-wrap:pretty">HandMimic assumes rigid objects with consistent geometry over time, so articulated and deformable objects are not handled directly. The reconstruction pipeline relies on segmentation, pose tracking and hand estimation, which can fail under heavy occlusion, fast motion, symmetry or difficult appearance. These errors can propagate to retargeting and policy learning.</p>
+  </div>
+</section>
+
+<section id="citation" data-screen-label="Citation" style="max-width:1000px;margin:0 auto;padding:88px 24px 0">
+  <div style="max-width:800px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+      <h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;color:#111">Citation</h2>
+      <button type="button" onClick="{{ copyBib }}" style="height:32px;padding:0 14px;border:1px solid #ddd;border-radius:999px;background:#fff;font-family:inherit;font-size:13.5px;font-weight:500;color:#333;cursor:pointer" style-hover="border-color:#999">
+        <sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}">Copy</sc-if>
+        <sc-if value="{{ copied }}" hint-placeholder-val="{{ false }}">Copied</sc-if>
+      </button>
+    </div>
+    <div ref="{{ bibRef }}" style="background:#f5f5f5;border-radius:8px;padding:18px 20px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.7;color:#222;overflow-wrap:anywhere">
+      <sc-if value="{{ anon }}" hint-placeholder-val="{{ false }}">
+        <div>@misc{handmimic2026,</div>
+        <div style="padding-left:2ch">title={HandMimic: Learning Dexterous Manipulations from Videos},</div>
+        <div style="padding-left:2ch">author={Anonymous},</div>
+        <div style="padding-left:2ch">year={2026}</div>
+        <div>}</div>
+      </sc-if>
+      <sc-if value="{{ named }}" hint-placeholder-val="{{ true }}">
+        <div>@misc{handmimic2026,</div>
+        <div style="padding-left:2ch">title={HandMimic: Learning Dexterous Manipulations from Videos},</div>
+        <div style="padding-left:2ch">author={Pan, Zhuoyang and Song, Yunzhou and Jiang, Chunyu and Shi, Junyao and Lei, Jiahui and Daniilidis, Kostas},</div>
+        <div style="padding-left:2ch">year={2026}</div>
+        <div>}</div>
+      </sc-if>
+    </div>
+  </div>
+</section>
+
+<section id="references" data-screen-label="References" style="max-width:1000px;margin:0 auto;padding:88px 24px 0">
+  <div style="max-width:800px;margin:0 auto">
+    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;color:#111">References</h2>
+    <ol style="margin:0;padding-left:1.6em;font-size:14.5px;line-height:1.55;color:#555;display:flex;flex-direction:column;gap:10px;text-wrap:pretty">
+      <li id="ref-sam2" style="scroll-margin-top:96px">Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman Rädle, Chloe Rolland, Laura Gustafson, et al. <a href="https://arxiv.org/abs/2408.00714" target="_blank" rel="noopener">SAM 2: Segment Anything in Images and Videos</a>. ICLR 2025.</li>
+      <li id="ref-sam3d" style="scroll-margin-top:96px">Xingyu Chen, Fu-Jen Chu, Pierre Gleize, Kevin J. Liang, Alexander Sax, Hao Tang, Weiyao Wang, Michelle Guo, Thibaut Hardin, Xiang Li, et al. <a href="https://arxiv.org/abs/2511.16624" target="_blank" rel="noopener">SAM 3D: 3Dfy Anything in Images</a>. CVPR 2026.</li>
+      <li id="ref-spatracker" style="scroll-margin-top:96px">Yuxi Xiao, Jianyuan Wang, Nan Xue, Nikita Karaev, Yuri Makarov, Bingyi Kang, Xing Zhu, Hujun Bao, Yujun Shen, Xiaowei Zhou. <a href="https://arxiv.org/abs/2507.12462" target="_blank" rel="noopener">SpatialTrackerV2: Advancing 3D Point Tracking with Explicit Camera Motion</a>. ICCV 2025.</li>
+      <li id="ref-foundationpose" style="scroll-margin-top:96px">Bowen Wen, Wei Yang, Jan Kautz, Stan Birchfield. <a href="https://arxiv.org/abs/2312.08344" target="_blank" rel="noopener">FoundationPose: Unified 6D Pose Estimation and Tracking of Novel Objects</a>. CVPR 2024.</li>
+      <li id="ref-wilor" style="scroll-margin-top:96px">Rolandos Alexandros Potamias, Jinglei Zhang, Jiankang Deng, Stefanos Zafeiriou. <a href="https://arxiv.org/abs/2409.12259" target="_blank" rel="noopener">WiLoR: End-to-End 3D Hand Localization and Reconstruction In-the-Wild</a>. CVPR 2025.</li>
+      <li id="ref-mano" style="scroll-margin-top:96px">Javier Romero, Dimitrios Tzionas, Michael J. Black. <a href="https://mano.is.tue.mpg.de" target="_blank" rel="noopener">Embodied Hands: Modeling and Capturing Hands and Bodies Together</a>. ACM Transactions on Graphics (SIGGRAPH Asia) 2017.</li>
+      <li id="ref-pyroki" style="scroll-margin-top:96px">Chung Min Kim, Brent Yi, Hongsuk Choi, Yi Ma, Ken Goldberg, Angjoo Kanazawa. <a href="https://arxiv.org/abs/2505.03728" target="_blank" rel="noopener">PyRoki: A Modular Toolkit for Robot Kinematic Optimization</a>. IROS 2025.</li>
+      <li id="ref-maniptrans" style="scroll-margin-top:96px">Kailin Li, Puhao Li, Tengyu Liu, Yuyang Li, Siyuan Huang. <a href="https://arxiv.org/abs/2503.21860" target="_blank" rel="noopener">ManipTrans: Efficient Dexterous Bimanual Manipulation Transfer via Residual Learning</a>. CVPR 2025.</li>
+      <li id="ref-dexycb" style="scroll-margin-top:96px">Yu-Wei Chao, Wei Yang, Yu Xiang, Pavlo Molchanov, Ankur Handa, Jonathan Tremblay, Yashraj S. Narang, Karl Van Wyk, Umar Iqbal, Stan Birchfield, et al. <a href="https://arxiv.org/abs/2104.04631" target="_blank" rel="noopener">DexYCB: A Benchmark for Capturing Hand Grasping of Objects</a>. CVPR 2021.</li>
+      <li id="ref-ycb" style="scroll-margin-top:96px">Berk Calli, Arjun Singh, Aaron Walsman, Siddhartha Srinivasa, Pieter Abbeel, Aaron Dollar. <a href="https://www.ycbbenchmarks.com" target="_blank" rel="noopener">The YCB Object and Model Set: Towards Common Benchmarks for Manipulation Research</a>. ICAR 2015.</li>
+      <li id="ref-deximit" style="scroll-margin-top:96px">Juncheng Mu, Sizhe Yang, Yiming Bao, Hojin Bae, Tianming Wei, Linning Xu. <a href="https://arxiv.org/abs/2602.10105" target="_blank" rel="noopener">DexImit: Learning Bimanual Dexterous Manipulation from Monocular Human Videos</a>. arXiv:2602.10105, 2026.</li>
+      <li id="ref-doasido" style="scroll-margin-top:96px">Bhawna Paliwal, Haritheja Etukuru, William Liang, Pieter Abbeel, Nur Muhammad Mahi Shafiullah, Jitendra Malik. <a href="https://arxiv.org/abs/2606.19333" target="_blank" rel="noopener">Do As I Do: Dexterous Manipulation Data from Everyday Human Videos</a>. arXiv:2606.19333, 2026.</li>
+      <li id="ref-gso" style="scroll-margin-top:96px">Laura Downs, Anthony Francis, Nate Koenig, Brandon Kinman, Ryan Hickman, Krista Reymann, Thomas B. McHugh, Vincent Vanhoucke. <a href="https://arxiv.org/abs/2204.11918" target="_blank" rel="noopener">Google Scanned Objects: A High-Quality Dataset of 3D Scanned Household Items</a>. ICRA 2022.</li>
+      <li id="ref-omniobject3d" style="scroll-margin-top:96px">Tong Wu, Jiarui Zhang, Xiao Fu, Yuxin Wang, Jiawei Ren, Liang Pan, Wayne Wu, Lei Yang, Jiaqi Wang, Chen Qian, et al. <a href="https://arxiv.org/abs/2301.07525" target="_blank" rel="noopener">OmniObject3D: Large-Vocabulary 3D Object Dataset for Realistic Perception, Reconstruction and Generation</a>. CVPR 2023.</li>
+    </ol>
+  </div>
+</section>
+
+<footer style="max-width:1000px;margin:0 auto;padding:72px 24px 0">
+  <p style="max-width:800px;margin:0 auto;font-size:13.5px;line-height:1.6;color:#888;text-align:center">The website template is based on <a href="https://qf3-rl.github.io/" target="_blank" rel="noopener">QF3</a>.</p>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;anonymous&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;heroMedia&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Stage tiles&quot;,&quot;Paper figure&quot;],&quot;default&quot;:&quot;Stage tiles&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Hero&quot;}}">
+class Component extends DCLogic {
+  state = { copied: false, mTab: 0, rTab: 0, cTab: 0, sTab: 0, vw: typeof window !== 'undefined' ? window.innerWidth : 1440, active: 'top', dragging: false };
+  navIds = ['abstract', 'method', 'results', 'res-recon', 'res-policy', 'res-shapes', 'res-wild', 'real-world', 'limitations', 'citation', 'references'];
+  bibRef = React.createRef();
+  navRef = React.createRef();
+  handleRef = React.createRef();
+  copyBib = () => {
+    const el = this.bibRef.current;
+    if (!el) return;
+    const text = el.innerText.trim();
+    const done = () => {
+      this.setState({ copied: true });
+      clearTimeout(this._t);
+      this._t = setTimeout(() => this.setState({ copied: false }), 1800);
+    };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      ta.remove(); done();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  };
+  scroller() {
+    const se = document.scrollingElement || document.documentElement;
+    if (se.scrollHeight > se.clientHeight + 1) return se;
+    let el = document.getElementById('top');
+    while (el && el !== document.body) {
+      const oy = getComputedStyle(el).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+      el = el.parentElement;
+    }
+    return se;
+  }
+  // Maps scroll position <-> handle position piecewise between nav items and their sections.
+  measure() {
+    const track = this.navRef.current;
+    if (!track) return null;
+    const sc = this.scroller();
+    const isRoot = sc === (document.scrollingElement || document.documentElement);
+    const viewH = isRoot ? window.innerHeight : sc.clientHeight;
+    const baseTop = isRoot ? 0 : sc.getBoundingClientRect().top;
+    const maxS = Math.max(0, sc.scrollHeight - viewH);
+    const line = viewH * 0.3;
+    const c = [], s = [], ids = [];
+    track.querySelectorAll('[data-nav]').forEach((it) => {
+      const id = it.getAttribute('data-nav');
+      const el = document.getElementById(id);
+      if (!el) return;
+      const top = el.getBoundingClientRect().top - baseTop + sc.scrollTop;
+      ids.push(id);
+      c.push(it.offsetTop + it.offsetHeight / 2);
+      s.push(id === 'top' ? 0 : Math.max(0, Math.min(maxS, top - line)));
+    });
+    const pairs = [];
+    for (let i = 0; i < c.length; i++) {
+      const last = pairs[pairs.length - 1];
+      if (last && s[i] <= last.s) { if (s[i] >= maxS - 0.5) last.c = c[i]; continue; }
+      pairs.push({ c: c[i], s: s[i] });
+    }
+    return { sc, c, ids, pairs };
+  }
+  sToC(x, p) {
+    for (let i = p.length - 1; i >= 0; i--) {
+      if (x >= p[i].s) {
+        if (i === p.length - 1) return p[i].c;
+        return p[i].c + (x - p[i].s) / (p[i + 1].s - p[i].s) * (p[i + 1].c - p[i].c);
+      }
+    }
+    return p.length ? p[0].c : 0;
+  }
+  cToS(y, p) {
+    for (let i = p.length - 1; i >= 0; i--) {
+      if (y >= p[i].c) {
+        if (i === p.length - 1) return p[i].s;
+        return p[i].s + (y - p[i].c) / (p[i + 1].c - p[i].c) * (p[i + 1].s - p[i].s);
+      }
+    }
+    return p.length ? p[0].s : 0;
+  }
+  placeHandle(y, m) {
+    this._y = y;
+    const h = this.handleRef.current;
+    if (h) h.style.transform = 'translateY(' + y.toFixed(1) + 'px)';
+    let idx = 0;
+    m.c.forEach((ci, i) => { if (ci <= y + 1) idx = i; });
+    const active = m.ids[idx] || 'top';
+    if (active !== this.state.active) this.setState({ active });
+  }
+  sync = () => {
+    if (this._drag) return;
+    const m = this.measure();
+    if (!m || !m.pairs.length) return;
+    this.placeHandle(this.sToC(m.sc.scrollTop, m.pairs), m);
+  };
+  onHandleDown = (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const m = this.measure();
+    if (!m) return;
+    this._drag = { y0: e.clientY, h0: this._y || 0, sc: m.sc };
+    this._prevSB = [document.documentElement.style.scrollBehavior, m.sc.style.scrollBehavior];
+    document.documentElement.style.scrollBehavior = 'auto';
+    m.sc.style.scrollBehavior = 'auto';
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('pointermove', this.onDragMove);
+    window.addEventListener('pointerup', this.onDragEnd);
+    window.addEventListener('pointercancel', this.onDragEnd);
+    this.setState({ dragging: true });
+  };
+  onDragMove = (e) => {
+    if (!this._drag) return;
+    const m = this.measure();
+    if (!m || !m.pairs.length) return;
+    const first = m.pairs[0].c, last = m.pairs[m.pairs.length - 1].c;
+    const y = Math.max(first, Math.min(last, this._drag.h0 + e.clientY - this._drag.y0));
+    this.placeHandle(y, m);
+    m.sc.scrollTop = this.cToS(y, m.pairs);
+  };
+  onDragEnd = () => {
+    if (!this._drag) return;
+    const sc = this._drag.sc;
+    this._drag = null;
+    document.documentElement.style.scrollBehavior = this._prevSB[0];
+    sc.style.scrollBehavior = this._prevSB[1];
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    window.removeEventListener('pointermove', this.onDragMove);
+    window.removeEventListener('pointerup', this.onDragEnd);
+    window.removeEventListener('pointercancel', this.onDragEnd);
+    this.setState({ dragging: false });
+    this.sync();
+  };
+  hlRef = () => {
+    const id = (location.hash || '').slice(1);
+    document.querySelectorAll('#references li.ref-hl').forEach((el) => el.classList.remove('ref-hl'));
+    if (!id.startsWith('ref-')) return;
+    const el = document.getElementById(id);
+    if (el) el.classList.add('ref-hl');
+    return el;
+  };
+  onResize = () => {
+    if (window.innerWidth !== this.state.vw) this.setState({ vw: window.innerWidth }, this.sync);
+    else this.sync();
+  };
+  componentDidMount() {
+    document.addEventListener('scroll', this.sync, true);
+    window.addEventListener('resize', this.onResize);
+    window.addEventListener('load', this.sync);
+    this.sync();
+    this._t2 = setTimeout(this.sync, 300);
+    window.addEventListener('hashchange', this.hlRef);
+    this._t3 = setTimeout(() => { const el = this.hlRef(); if (el) el.scrollIntoView(); }, 350);
+  }
+  componentDidUpdate() {
+    const h = this.handleRef.current;
+    if (!this._drag && h && !h.style.transform) this.sync();
+  }
+  componentWillUnmount() {
+    clearTimeout(this._t); clearTimeout(this._t2); clearTimeout(this._t3);
+    window.removeEventListener('hashchange', this.hlRef);
+    document.removeEventListener('scroll', this.sync, true);
+    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('load', this.sync);
+    this.onDragEnd();
+  }
+  renderVals() {
+    const anon = this.props.anonymous ?? false;
+    const hero = this.props.heroMedia ?? 'Stage tiles';
+    const { mTab, rTab, cTab, sTab, copied, vw, active, dragging } = this.state;
+    const v = {
+      anon, named: !anon,
+      heroTiles: hero !== 'Paper figure', heroFigure: hero === 'Paper figure',
+      copied, notCopied: !copied,
+      copyBib: this.copyBib, bibRef: this.bibRef,
+      navRef: this.navRef, handleRef: this.handleRef, onHandleDown: this.onHandleDown,
+      handTilt: dragging ? 'rotate(-16deg) scale(1.12)' : 'none',
+    };
+    const tabs = (prefix, act, n, key) => {
+      for (let i = 0; i < n; i++) {
+        v[prefix + i] = act === i;
+        v[prefix + i + 'bg'] = act === i ? '#222' : '#f0f0f0';
+        v[prefix + i + 'fg'] = act === i ? '#fff' : '#444';
+        v['set' + prefix.toUpperCase() + i] = () => this.setState({ [key]: i });
+      }
+    };
+    tabs('m', mTab, 4, 'mTab');
+    tabs('r', rTab, 4, 'rTab');
+    tabs('c', cTab, 2, 'cTab');
+    tabs('s', sTab, 4, 'sTab');
+    const gutter = vw >= 1460;
+    v.showNav = vw >= 900;
+    v.navLeft = (gutter ? Math.round((vw - 1000) / 2 - 190) : 40) + 'px';
+    v.rootPad = v.showNav && !gutter ? '220px' : '0px';
+    const inResults = active === 'results';
+    this.navIds.forEach((id, i) => {
+      const on = id.startsWith('res-') ? inResults && sTab === i - 3 : active === id;
+      v['n' + i + 'c'] = on ? '#111' : (id.startsWith('res-') ? '#999' : '#777');
+      v['n' + i + 'w'] = on ? '600' : '400';
+    });
+    return v;
+  }
+}
+</script>
+</body>
+</html>
